@@ -4,7 +4,7 @@ Minimal Express + PostgreSQL backend for the DBMS demo project.
 
 ## Setup
 
-1. Create a `.env` file from `.env.example`.
+1. Create a `.env` file
 2. Install dependencies:
    `npm install`
 3. Start the server:
