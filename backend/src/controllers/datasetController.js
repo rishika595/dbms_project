@@ -8,7 +8,24 @@ const listDatasets = asyncHandler(async (_req, res) => {
 });
 
 const getDatasetById = asyncHandler(async (req, res) => {
-  const dataset = await datasetService.getDatasetById(Number(req.params.datasetId));
+  const datasetId = req.params.datasetId;
+
+  if (!Number.isInteger(Number(datasetId))) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid dataset id"
+    });
+  }
+
+  const dataset = await datasetService.getDatasetById(Number(datasetId));
+
+  if (!dataset) {
+    return res.status(404).json({
+      success: false,
+      message: "Dataset not found"
+    });
+  }
+
   res.json(dataset);
 });
 
