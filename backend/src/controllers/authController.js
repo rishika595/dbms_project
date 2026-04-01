@@ -12,6 +12,26 @@ const login = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+const register = asyncHandler(async (req, res) => {
+  const { username, email, password, displayName } = req.body;
+
+  if (!username || !email || !password || !displayName) {
+    return res.status(400).json({
+      message: "username, email, password, and displayName are required"
+    });
+  }
+
+  const result = await authService.register({
+    username,
+    email,
+    password,
+    displayName
+  });
+
+  res.status(201).json(result);
+});
+
 module.exports = {
-  login
+  login,
+  register
 };

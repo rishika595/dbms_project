@@ -2,6 +2,18 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const db = require("../config/db");
 
+const signAuthToken = (user) =>
+  jwt.sign(
+    {
+      id: user.user_id,
+      userId: user.user_id,
+      email: user.email,
+      username: user.username
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+  );
+
 const login = async (email, password) => {
   const { rows } = await db.query(
     `
@@ -42,20 +54,89 @@ const login = async (email, password) => {
     throw error;
   }
 
-  const token = jwt.sign(
-    {
-      id: user.user_id,
-      userId: user.user_id,
-      email: user.email,
-      username: user.username
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
-  );
+  const token = signAuthToken(user);
 
   return { token };
 };
 
+const register = async ({ username, email, password, displayName }) => {
+  const client = await db.pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const existingUsername = await client.query(
+      'SELECT 1 FROM "USER" WHERE username = $1 LIMIT 1',
+      [username]
+    );
+
+    if (existingUsername.rowCount) {
+      const error = new Error("Username already exists");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const existingEmail = await client.query(
+      'SELECT 1 FROM "USER" WHERE email = $1 LIMIT 1',
+      [email]
+    );
+
+    if (existingEmail.rowCount) {
+      const error = new Error("Email already exists");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const userResult = await client.query(
+      `
+        INSERT INTO "USER" (
+          username,
+          email,
+          password_hash
+        )
+        VALUES ($1, $2, $3)
+        RETURNING user_id, username, email
+      `,
+      [username, email, passwordHash]
+    );
+
+    const user = userResult.rows[0];
+
+    await client.query(
+      `
+        INSERT INTO REGISTERED_INDIVIDUAL (
+          user_id,
+          display_name
+        )
+        VALUES ($1, $2)
+      `,
+      [user.user_id, displayName]
+    );
+
+    await client.query("COMMIT");
+
+    return {
+      success: true,
+      message: "User registered successfully",
+      user: {
+        id: user.user_id,
+        username: user.username,
+        email: user.email,
+        displayName
+      },
+      token: signAuthToken(user)
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
-  login
+  login,
+  register
 };
