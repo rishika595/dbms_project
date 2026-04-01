@@ -513,13 +513,15 @@ ORDER BY d.current_credibility_score DESC;
 -- ============================================================================
 -- SECTION 10: SEED DATA
 -- ============================================================================
-
+--python -c "import bcrypt; print(bcrypt.hashpw(b'TestPassword123!', bcrypt.gensalt(12)).decode())"
+--to get the hashed password
+--Password: TestPassword123!
 INSERT INTO "USER" (username, email, password_hash, account_status) VALUES
-    ('jane_doe',    'jane@example.com',  '$2b$12$examplehashedpassword1234567890abcdef', 'active'),
-    ('alice_smith', 'alice@example.com', '$2b$12$examplehashedpassword_alice',           'active'),
-    ('bob_jones',   'bob@example.com',   '$2b$12$examplehashedpassword_bob',             'active'),
-    ('carol_white', 'carol@example.com', '$2b$12$examplehashedpassword_carol',           'active'),
-    ('david_brown', 'david@example.com', '$2b$12$examplehashedpassword_david',           'active');
+    ('jane_doe',    'jane@example.com',  '$2b$12$XSEmiBsGFNoaQw0nU7256uq/8.dHeQMVikXMytEg0/I1BzCjA1zHy', 'active'),
+    ('alice_smith', 'alice@example.com', '$2b$12$XSEmiBsGFNoaQw0nU7256uq/8.dHeQMVikXMytEg0/I1BzCjA1zHy', 'active'),
+    ('bob_jones',   'bob@example.com',   '$2b$12$XSEmiBsGFNoaQw0nU7256uq/8.dHeQMVikXMytEg0/I1BzCjA1zHy', 'active'),
+    ('carol_white', 'carol@example.com', '$2b$12$XSEmiBsGFNoaQw0nU7256uq/8.dHeQMVikXMytEg0/I1BzCjA1zHy', 'active'),
+    ('david_brown', 'david@example.com', '$2b$12$XSEmiBsGFNoaQw0nU7256uq/8.dHeQMVikXMytEg0/I1BzCjA1zHy', 'active');
 
 INSERT INTO REGISTERED_INDIVIDUAL (user_id, display_name, bio, reputation_score, verification_status) VALUES
     ((SELECT user_id FROM "USER" WHERE username = 'jane_doe'),
