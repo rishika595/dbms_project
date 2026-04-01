@@ -3,6 +3,9 @@ const db = require("../config/db");
 const slugify = require("../utils/slugify");
 const { parseCsvPreview } = require("./csvService");
 
+const backendRoot = path.join(__dirname, "..", "..");
+const uploadsRoot = path.join(backendRoot, "uploads");
+
 const ensureRegisteredIndividual = async (userId, client = db) => {
   const { rowCount } = await client.query(
     "SELECT 1 FROM REGISTERED_INDIVIDUAL WHERE user_id = $1",
@@ -183,7 +186,7 @@ const createDatasetUpload = async ({ userId, title, description, file }) => {
     );
 
     const datasetId = datasetResult.rows[0].dataset_id;
-    const relativeFilePath = path.relative(path.join(__dirname, "..", ".."), file.path).replace(/\\/g, "/");
+    const relativeFilePath = path.relative(backendRoot, file.path).replace(/\\/g, "/");
 
     const versionResult = await client.query(
       `
@@ -225,6 +228,13 @@ const createDatasetUpload = async ({ userId, title, description, file }) => {
 
     await client.query("COMMIT");
 
+    console.log("Dataset upload saved", {
+      datasetId,
+      versionId,
+      uploadPath: file.path,
+      storedFilePath: relativeFilePath
+    });
+
     return {
       success: true,
       datasetId,
@@ -236,6 +246,18 @@ const createDatasetUpload = async ({ userId, title, description, file }) => {
   } finally {
     client.release();
   }
+};
+
+const resolveDatasetFilePath = (storedFilePath) => {
+  if (!storedFilePath) {
+    return null;
+  }
+
+  if (path.isAbsolute(storedFilePath)) {
+    return storedFilePath;
+  }
+
+  return path.resolve(backendRoot, storedFilePath);
 };
 
 const getVersionFileById = async (versionId) => {
@@ -281,6 +303,7 @@ module.exports = {
   listFeedbackByDatasetId,
   upsertFeedback,
   createDatasetUpload,
+  resolveDatasetFilePath,
   getVersionFileById,
   logDownload
 };

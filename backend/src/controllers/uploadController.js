@@ -25,6 +25,13 @@ const uploadDataset = asyncHandler(async (req, res) => {
     file: req.file
   });
 
+  console.log("Upload controller completed", {
+    originalName: req.file.originalname,
+    savedPath: req.file.path,
+    datasetId: result.datasetId,
+    versionId: result.versionId
+  });
+
   res.status(201).json(result);
 });
 

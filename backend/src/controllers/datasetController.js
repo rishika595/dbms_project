@@ -1,5 +1,4 @@
 const fs = require("fs/promises");
-const path = require("path");
 const asyncHandler = require("../utils/asyncHandler");
 const datasetService = require("../services/datasetService");
 
@@ -117,14 +116,21 @@ const downloadVersion = asyncHandler(async (req, res) => {
   }
 
   const version = await datasetService.getVersionFileById(Number(versionId));
-  const absolutePath = path.join(__dirname, "..", "..", version.file_path);
+  const absolutePath = datasetService.resolveDatasetFilePath(version.file_path);
+
+  console.log("Download requested", {
+    versionId: version.version_id,
+    datasetId: version.dataset_id,
+    storedFilePath: version.file_path,
+    resolvedFilePath: absolutePath
+  });
 
   try {
     await fs.access(absolutePath);
   } catch (error) {
     return res.status(404).json({
       success: false,
-      message: "Version file not found"
+      message: "Dataset file not found"
     });
   }
 

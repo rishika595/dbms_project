@@ -106,10 +106,18 @@ const normalizeAiResult = (result) => ({
 
 const suggestMetadataWithAi = async ({ dataset, csvAnalysis }) => {
   if (!process.env.OPENAI_API_KEY) {
+    console.log("AI metadata fallback used", {
+      reason: "OPENAI_API_KEY missing"
+    });
     return fallbackResponse;
   }
 
   try {
+    console.log("AI metadata call starting", {
+      datasetId: dataset.id,
+      model: process.env.AI_MODEL || "gpt-4o-mini"
+    });
+
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
@@ -119,7 +127,12 @@ const suggestMetadataWithAi = async ({ dataset, csvAnalysis }) => {
       input: [
         {
           role: "user",
-          content: buildPrompt({ dataset, csvAnalysis })
+          content: [
+            {
+              type: "input_text",
+              text: buildPrompt({ dataset, csvAnalysis })
+            }
+          ]
         }
       ],
       text: {
@@ -133,9 +146,16 @@ const suggestMetadataWithAi = async ({ dataset, csvAnalysis }) => {
     });
 
     const parsed = JSON.parse(response.output_text);
+    console.log("AI metadata call succeeded", {
+      datasetId: dataset.id
+    });
     return normalizeAiResult(parsed);
   } catch (error) {
     console.error("AI metadata suggestion failed", error.message);
+    console.log("AI metadata fallback used", {
+      datasetId: dataset.id,
+      reason: "OpenAI call failed or response parsing failed"
+    });
     return fallbackResponse;
   }
 };

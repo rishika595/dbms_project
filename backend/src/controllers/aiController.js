@@ -35,14 +35,21 @@ const suggestMetadata = asyncHandler(async (req, res) => {
     });
   }
 
-  const absolutePath = path.join(__dirname, "..", "..", filePath);
+  const absolutePath = datasetService.resolveDatasetFilePath(filePath);
+
+  console.log("AI metadata requested", {
+    datasetId,
+    versionId,
+    storedFilePath: filePath,
+    resolvedFilePath: absolutePath
+  });
 
   try {
     await fs.access(absolutePath);
   } catch (error) {
     return res.status(404).json({
       success: false,
-      message: "Current dataset version file not found"
+      message: "Dataset file not found"
     });
   }
 
