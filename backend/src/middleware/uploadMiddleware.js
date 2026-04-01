@@ -26,7 +26,9 @@ const fileFilter = (_req, file, cb) => {
     file.mimetype === "application/vnd.ms-excel";
 
   if (!isCsv) {
-    return cb(new Error("Only CSV files are allowed"));
+    const error = new Error("Only CSV files are allowed");
+    error.statusCode = 400;
+    return cb(error);
   }
 
   cb(null, true);

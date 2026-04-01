@@ -30,20 +30,47 @@ const getDatasetById = asyncHandler(async (req, res) => {
 });
 
 const listFeedback = asyncHandler(async (req, res) => {
-  const feedback = await datasetService.listFeedbackByDatasetId(Number(req.params.datasetId));
+  const datasetId = req.params.datasetId;
+
+  if (!Number.isInteger(Number(datasetId))) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid dataset id"
+    });
+  }
+
+  const feedback = await datasetService.listFeedbackByDatasetId(Number(datasetId));
   res.json(feedback);
 });
 
 const upsertFeedback = asyncHandler(async (req, res) => {
+  const datasetId = req.params.datasetId;
   const { rating, comment } = req.body;
 
+  if (!Number.isInteger(Number(datasetId))) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid dataset id"
+    });
+  }
+
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return res.status(400).json({ message: "Rating must be an integer between 1 and 5" });
+    return res.status(400).json({
+      success: false,
+      message: "Rating must be an integer between 1 and 5"
+    });
+  }
+
+  if (comment !== undefined && comment !== null && typeof comment !== "string") {
+    return res.status(400).json({
+      success: false,
+      message: "Comment must be a string"
+    });
   }
 
   const result = await datasetService.upsertFeedback({
-    datasetId: Number(req.params.datasetId),
-    userId: req.user.userId,
+    datasetId: Number(datasetId),
+    userId: req.user.id,
     rating,
     comment
   });
@@ -55,11 +82,21 @@ const uploadDataset = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
   if (!title || !req.file) {
-    return res.status(400).json({ message: "Title and CSV file are required" });
+    return res.status(400).json({
+      success: false,
+      message: "Title and CSV file are required"
+    });
+  }
+
+  if (description !== undefined && description !== null && typeof description !== "string") {
+    return res.status(400).json({
+      success: false,
+      message: "Description must be a string"
+    });
   }
 
   const result = await datasetService.createDatasetUpload({
-    userId: req.user.userId,
+    userId: req.user.id,
     title,
     description,
     file: req.file
@@ -69,14 +106,23 @@ const uploadDataset = asyncHandler(async (req, res) => {
 });
 
 const downloadVersion = asyncHandler(async (req, res) => {
-  const version = await datasetService.getVersionFileById(Number(req.params.versionId));
+  const versionId = req.params.versionId;
+
+  if (!Number.isInteger(Number(versionId))) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid version id"
+    });
+  }
+
+  const version = await datasetService.getVersionFileById(Number(versionId));
   const absolutePath = path.join(__dirname, "..", "..", version.file_path);
 
   try {
     await datasetService.logDownload({
       datasetId: version.dataset_id,
       versionId: version.version_id,
-      userId: req.user?.userId || null
+      userId: req.user?.id || null
     });
   } catch (error) {
     console.error("Download log failed", error.message);

@@ -15,6 +15,12 @@ const signAuthToken = (user) =>
   );
 
 const login = async (email, password) => {
+  if (!email || !password) {
+    const error = new Error("Email and password are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
   const { rows } = await db.query(
     `
       SELECT
@@ -35,7 +41,7 @@ const login = async (email, password) => {
   const user = rows[0];
 
   if (!user) {
-    const error = new Error("Invalid credentials");
+    const error = new Error("Invalid email or password");
     error.statusCode = 401;
     throw error;
   }
@@ -43,7 +49,7 @@ const login = async (email, password) => {
   const passwordMatches = await bcrypt.compare(password, user.password_hash);
 
   if (!passwordMatches) {
-    const error = new Error("Invalid credentials");
+    const error = new Error("Invalid email or password");
     error.statusCode = 401;
     throw error;
   }
@@ -60,6 +66,12 @@ const login = async (email, password) => {
 };
 
 const register = async ({ username, email, password, displayName }) => {
+  if (!username || !email || !password || !displayName) {
+    const error = new Error("username, email, password, and displayName are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
   const client = await db.pool.connect();
 
   try {

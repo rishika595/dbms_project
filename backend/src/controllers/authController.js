@@ -5,7 +5,10 @@ const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
+    return res.status(400).json({
+      success: false,
+      message: "Email and password are required"
+    });
   }
 
   const result = await authService.login(email, password);
@@ -17,6 +20,7 @@ const register = asyncHandler(async (req, res) => {
 
   if (!username || !email || !password || !displayName) {
     return res.status(400).json({
+      success: false,
       message: "username, email, password, and displayName are required"
     });
   }

@@ -4,18 +4,33 @@ const datasetService = require("../services/datasetService");
 const { parseCsvPreview } = require("../services/csvService");
 
 const suggestMetadata = asyncHandler(async (req, res) => {
-  const datasetId = Number(req.body.datasetId);
+  const rawDatasetId = req.body.datasetId;
 
-  if (!datasetId) {
-    return res.status(400).json({ message: "datasetId is required" });
+  if (rawDatasetId === undefined || rawDatasetId === null || rawDatasetId === "") {
+    return res.status(400).json({
+      success: false,
+      message: "datasetId is required"
+    });
   }
+
+  if (!Number.isInteger(Number(rawDatasetId))) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid dataset id"
+    });
+  }
+
+  const datasetId = Number(rawDatasetId);
 
   const dataset = await datasetService.getDatasetById(datasetId);
   const versionId = dataset.metadata?.versionId;
   const filePath = dataset.metadata?.filePath;
 
   if (!versionId || !filePath) {
-    return res.status(404).json({ message: "Current dataset version file not found" });
+    return res.status(404).json({
+      success: false,
+      message: "Current dataset version file not found"
+    });
   }
 
   const absolutePath = path.join(__dirname, "..", "..", filePath);

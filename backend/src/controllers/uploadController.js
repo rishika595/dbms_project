@@ -5,7 +5,17 @@ const uploadDataset = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
   if (!title || !req.file) {
-    return res.status(400).json({ message: "Title and CSV file are required" });
+    return res.status(400).json({
+      success: false,
+      message: "Title and CSV file are required"
+    });
+  }
+
+  if (description !== undefined && description !== null && typeof description !== "string") {
+    return res.status(400).json({
+      success: false,
+      message: "Description must be a string"
+    });
   }
 
   const result = await datasetService.createDatasetUpload({
