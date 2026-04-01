@@ -2,7 +2,8 @@ const fs = require("fs/promises");
 const path = require("path");
 const asyncHandler = require("../utils/asyncHandler");
 const datasetService = require("../services/datasetService");
-const { parseCsvPreview } = require("../services/csvService");
+const { readCsvAnalysis } = require("../services/csvService");
+const { suggestMetadataWithAi } = require("../services/aiService");
 
 const suggestMetadata = asyncHandler(async (req, res) => {
   const rawDatasetId = req.body.datasetId;
@@ -45,15 +46,13 @@ const suggestMetadata = asyncHandler(async (req, res) => {
     });
   }
 
-  const csvInfo = await parseCsvPreview(absolutePath);
-
-  res.json({
-    suggestedModality: "tabular",
-    suggestedTaskType: "classification",
-    numRows: csvInfo.rows,
-    numColumns: csvInfo.columns,
-    summary: "Basic dataset analysis"
+  const csvAnalysis = await readCsvAnalysis(absolutePath);
+  const aiSuggestion = await suggestMetadataWithAi({
+    dataset,
+    csvAnalysis
   });
+
+  res.json(aiSuggestion);
 });
 
 module.exports = {
