@@ -3,11 +3,18 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
+const databaseUrl = process.env.DATABASE_URL;
+const useSsl = Boolean(databaseUrl) && !/localhost|127\.0\.0\.1/i.test(databaseUrl);
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  connectionString: databaseUrl,
+  ...(useSsl
+    ? {
+        ssl: {
+          rejectUnauthorized: false
+        }
+      }
+    : {})
 });
 
 pool.on("error", (error) => {

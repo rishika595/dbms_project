@@ -7,15 +7,16 @@ dotenv.config();
 const port = process.env.PORT || 5000;
 
 const startServer = async () => {
-  try {
-    await db.query("SELECT 1");
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server", error);
-    process.exit(1);
-  }
+  app.listen(port, async () => {
+    console.log(`Server running on port ${port}`);
+
+    try {
+      await db.query("SELECT 1");
+      console.log("Database connection verified");
+    } catch (error) {
+      console.error("Database connection check failed", error.message);
+    }
+  });
 };
 
 startServer();

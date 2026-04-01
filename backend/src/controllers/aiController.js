@@ -1,3 +1,4 @@
+const fs = require("fs/promises");
 const path = require("path");
 const asyncHandler = require("../utils/asyncHandler");
 const datasetService = require("../services/datasetService");
@@ -34,6 +35,16 @@ const suggestMetadata = asyncHandler(async (req, res) => {
   }
 
   const absolutePath = path.join(__dirname, "..", "..", filePath);
+
+  try {
+    await fs.access(absolutePath);
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: "Current dataset version file not found"
+    });
+  }
+
   const csvInfo = await parseCsvPreview(absolutePath);
 
   res.json({
