@@ -636,6 +636,8 @@ REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM dba_role, viewer_role,
 GRANT ALL PRIVILEGES ON SCHEMA public TO dba_role;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO dba_role;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO dba_role;
+-- Attempt to give DBA higher privileges (may be restricted in Supabase)
+ALTER ROLE dba_role CREATEROLE CREATEDB;
 
 -- viewer: read-only
 GRANT USAGE  ON SCHEMA public TO viewer_role;
@@ -652,6 +654,19 @@ REVOKE DELETE ON DATASET         FROM editor_role;
 REVOKE DELETE ON DATASET_VERSION FROM editor_role;
 REVOKE CREATE ON SCHEMA public   FROM editor_role;
 
+-- Ensure future tables inherit privileges
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT ALL ON TABLES TO dba_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT SELECT ON TABLES TO viewer_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT SELECT ON TABLES TO editor_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT INSERT, UPDATE ON TABLES TO editor_role;
 
 -- ============================================================================
 -- SECTION 12: FINAL CREDIBILITY SYNC
