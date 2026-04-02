@@ -8,7 +8,8 @@ const signAuthToken = (user) =>
       id: user.user_id,
       userId: user.user_id,
       email: user.email,
-      username: user.username
+      username: user.username,
+      role: user.role
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
@@ -29,9 +30,14 @@ const login = async (email, password) => {
         u.email,
         u.password_hash,
         u.account_status,
-        ri.display_name
+        ri.display_name,
+        CASE
+          WHEN a.user_id IS NOT NULL THEN 'admin'
+          ELSE 'registered_user'
+        END AS role
       FROM "USER" u
       LEFT JOIN REGISTERED_INDIVIDUAL ri ON ri.user_id = u.user_id
+      LEFT JOIN ADMIN a ON a.user_id = u.user_id
       WHERE u.email = $1
       LIMIT 1
     `,
@@ -62,7 +68,16 @@ const login = async (email, password) => {
 
   const token = signAuthToken(user);
 
-  return { token };
+  return {
+    token,
+    user: {
+      id: user.user_id,
+      username: user.username,
+      email: user.email,
+      displayName: user.display_name || null,
+      role: user.role
+    }
+  };
 };
 
 const register = async ({ username, email, password, displayName }) => {
@@ -114,7 +129,10 @@ const register = async ({ username, email, password, displayName }) => {
       [username, email, passwordHash]
     );
 
-    const user = userResult.rows[0];
+    const user = {
+      ...userResult.rows[0],
+      role: "registered_user"
+    };
 
     await client.query(
       `
@@ -136,7 +154,8 @@ const register = async ({ username, email, password, displayName }) => {
         id: user.user_id,
         username: user.username,
         email: user.email,
-        displayName
+        displayName,
+        role: user.role
       },
       token: signAuthToken(user)
     };

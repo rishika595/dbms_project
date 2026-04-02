@@ -16,7 +16,8 @@ const authMiddleware = (req, res, next) => {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.user = {
       ...payload,
-      id: payload.id || payload.userId
+      id: payload.id || payload.userId,
+      role: payload.role || "registered_user"
     };
     next();
   } catch (error) {
@@ -38,7 +39,8 @@ const optionalAuthMiddleware = (req, _res, next) => {
     const payload = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET);
     req.user = {
       ...payload,
-      id: payload.id || payload.userId
+      id: payload.id || payload.userId,
+      role: payload.role || "registered_user"
     };
   } catch (error) {
     req.user = null;
