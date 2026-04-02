@@ -3,7 +3,7 @@ const path = require("path");
 const asyncHandler = require("../utils/asyncHandler");
 const datasetService = require("../services/datasetService");
 const { readCsvAnalysis } = require("../services/csvService");
-const { suggestMetadataWithAi } = require("../services/aiService");
+const { suggestMetadataWithAi, buildFallbackResponse } = require("../services/aiService");
 
 const suggestMetadata = asyncHandler(async (req, res) => {
   const rawDatasetId = req.body.datasetId;
@@ -31,6 +31,7 @@ const suggestMetadata = asyncHandler(async (req, res) => {
   if (!versionId || !filePath) {
     return res.status(404).json({
       success: false,
+      aiStatus: "dataset_file_missing",
       message: "Current dataset version file not found"
     });
   }
@@ -49,11 +50,27 @@ const suggestMetadata = asyncHandler(async (req, res) => {
   } catch (error) {
     return res.status(404).json({
       success: false,
+      aiStatus: "dataset_file_missing",
       message: "Dataset file not found"
     });
   }
 
-  const csvAnalysis = await readCsvAnalysis(absolutePath);
+  let csvAnalysis;
+
+  try {
+    csvAnalysis = await readCsvAnalysis(absolutePath);
+  } catch (error) {
+    console.error("CSV preview failed", {
+      datasetId,
+      resolvedFilePath: absolutePath,
+      errorMessage: error.message
+    });
+
+    return res.json(
+      buildFallbackResponse("csv_preview_failed", "Failed to read dataset preview")
+    );
+  }
+
   const aiSuggestion = await suggestMetadataWithAi({
     dataset,
     csvAnalysis

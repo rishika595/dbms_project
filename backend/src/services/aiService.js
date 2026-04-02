@@ -1,13 +1,15 @@
 const OpenAI = require("openai");
 
-const fallbackResponse = {
+const buildFallbackResponse = (aiStatus, message) => ({
   source: "fallback",
+  aiStatus,
+  ...(message ? { message } : {}),
   suggestedModality: "tabular",
   suggestedTaskType: "classification",
   suggestedTags: [],
   shortSummary: "Basic dataset analysis",
   qualityWarnings: []
-};
+});
 
 const responseSchema = {
   type: "object",
@@ -90,6 +92,7 @@ const buildPrompt = ({ dataset, csvAnalysis }) => {
 
 const normalizeAiResult = (result) => ({
   source: "ai",
+  aiStatus: "ai_success",
   suggestedModality: typeof result.suggestedModality === "string" ? result.suggestedModality : "tabular",
   suggestedTaskType: typeof result.suggestedTaskType === "string" ? result.suggestedTaskType : "classification",
   suggestedTags: Array.isArray(result.suggestedTags)
@@ -104,12 +107,40 @@ const normalizeAiResult = (result) => ({
     : []
 });
 
+const mapOpenAiFailure = (error) => {
+  const status = error?.status;
+  const message = String(error?.message || "").toLowerCase();
+  const code = String(error?.code || "").toLowerCase();
+
+  if (status === 401 || status === 403 || code.includes("authentication")) {
+    return {
+      aiStatus: "api_key_invalid",
+      message: "OpenAI authentication failed"
+    };
+  }
+
+  if (
+    status === 400 &&
+    (message.includes("model") || code.includes("model") || code.includes("not_found_error"))
+  ) {
+    return {
+      aiStatus: "model_invalid",
+      message: "Invalid AI model configured"
+    };
+  }
+
+  return {
+    aiStatus: "openai_request_failed",
+    message: "AI request failed"
+  };
+};
+
 const suggestMetadataWithAi = async ({ dataset, csvAnalysis }) => {
   if (!process.env.OPENAI_API_KEY) {
     console.log("AI metadata fallback used", {
       reason: "OPENAI_API_KEY missing"
     });
-    return fallbackResponse;
+    return buildFallbackResponse("api_key_missing", "OPENAI_API_KEY not configured");
   }
 
   try {
@@ -151,16 +182,21 @@ const suggestMetadataWithAi = async ({ dataset, csvAnalysis }) => {
     });
     return normalizeAiResult(parsed);
   } catch (error) {
-    console.error("AI metadata suggestion failed", error.message);
+    const failure = mapOpenAiFailure(error);
+    console.error("AI metadata suggestion failed", {
+      datasetId: dataset.id,
+      aiStatus: failure.aiStatus,
+      errorMessage: error.message
+    });
     console.log("AI metadata fallback used", {
       datasetId: dataset.id,
-      reason: "OpenAI call failed or response parsing failed"
+      reason: failure.aiStatus
     });
-    return fallbackResponse;
+    return buildFallbackResponse(failure.aiStatus, failure.message);
   }
 };
 
 module.exports = {
   suggestMetadataWithAi,
-  fallbackResponse
+  buildFallbackResponse
 };
