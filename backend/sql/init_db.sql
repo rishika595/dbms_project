@@ -620,6 +620,7 @@ INSERT INTO FEEDBACK (dataset_id, user_id, rating_value, review_text, helpfulnes
 --       if you are running on a local named database.
 -- ============================================================================
 
+
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'dba_role')    THEN CREATE ROLE dba_role    LOGIN PASSWORD 'dba_pass';    END IF;
@@ -627,6 +628,28 @@ BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'editor_role') THEN CREATE ROLE editor_role LOGIN PASSWORD 'editor_pass'; END IF;
 END
 $$;
+
+ALTER SCHEMA public OWNER TO dba_role;
+
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+    LOOP
+        EXECUTE 'ALTER TABLE public.' || quote_ident(r.tablename) || ' OWNER TO dba_role';
+    END LOOP;
+END $$;
+
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public'
+    LOOP
+        EXECUTE 'ALTER SEQUENCE public.' || quote_ident(r.sequence_name) || ' OWNER TO dba_role';
+    END LOOP;
+END $$;
 
 -- Revoke first to avoid conflicts on re-runs
 REVOKE ALL PRIVILEGES ON SCHEMA public FROM dba_role, viewer_role, editor_role;
