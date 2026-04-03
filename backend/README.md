@@ -26,15 +26,15 @@ For a teammate to run the backend locally, including the AI feature:
    - `DATABASE_URL`
    - `JWT_SECRET`
    - `JWT_EXPIRES_IN`
-   - `OPENAI_API_KEY`
-   - `AI_MODEL`
+   - `GEMINI_API_KEY`
+   - `GEMINI_MODEL`
 5. Start the backend:
    `npm run dev`
 
 Notes:
 
-- If `OPENAI_API_KEY` is present, `POST /ai/suggest-metadata` will attempt a real OpenAI call.
-- If `OPENAI_API_KEY` is missing, the endpoint still works but returns the safe fallback response.
+- If `GEMINI_API_KEY` is present, `POST /ai/suggest-metadata` will attempt a real Gemini call.
+- If `GEMINI_API_KEY` is missing, the endpoint still works but returns the safe fallback response.
 - Uploaded CSV files are saved locally to `backend/uploads`, so the local upload -> AI flow works on a teammate's machine without any Render-specific setup.
 
 ### Local AI Test Flow
@@ -87,15 +87,15 @@ Required environment variables:
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
-- `OPENAI_API_KEY`
-- `AI_MODEL`
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL`
 
 Notes:
 
 - Render provides `PORT` automatically, and the server already binds to `process.env.PORT || 5000`.
 - With GitHub connected to Render, future pushes redeploy the service automatically.
 - Supabase/hosted PostgreSQL connections use SSL automatically; local `localhost` Postgres connections continue to work without SSL.
-- `POST /ai/suggest-metadata` uses a real OpenAI model response when `OPENAI_API_KEY` is configured, and safely falls back when it is not.
+- `POST /ai/suggest-metadata` uses a real Gemini model response when `GEMINI_API_KEY` is configured, and safely falls back when it is not.
 
 ## Notes
 

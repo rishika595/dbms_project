@@ -1,4 +1,4 @@
-const OpenAI = require("openai");
+const { GoogleGenAI } = require("@google/genai");
 
 const buildFallbackResponse = (aiStatus, message) => ({
   source: "fallback",
@@ -107,7 +107,7 @@ const normalizeAiResult = (result) => ({
     : []
 });
 
-const mapOpenAiFailure = (error) => {
+const mapGeminiFailure = (error) => {
   const status = error?.status;
   const message = String(error?.message || "").toLowerCase();
   const code = String(error?.code || "").toLowerCase();
@@ -115,7 +115,7 @@ const mapOpenAiFailure = (error) => {
   if (status === 401 || status === 403 || code.includes("authentication")) {
     return {
       aiStatus: "api_key_invalid",
-      message: "OpenAI authentication failed"
+      message: "Gemini authentication failed"
     };
   }
 
@@ -130,59 +130,53 @@ const mapOpenAiFailure = (error) => {
   }
 
   return {
-    aiStatus: "openai_request_failed",
+    aiStatus: "gemini_request_failed",
     message: "AI request failed"
   };
 };
 
 const suggestMetadataWithAi = async ({ dataset, csvAnalysis }) => {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     console.log("AI metadata fallback used", {
-      reason: "OPENAI_API_KEY missing"
+      reason: "GEMINI_API_KEY missing"
     });
-    return buildFallbackResponse("api_key_missing", "OPENAI_API_KEY not configured");
+    return buildFallbackResponse("api_key_missing", "GEMINI_API_KEY not configured");
   }
 
   try {
     console.log("AI metadata call starting", {
       datasetId: dataset.id,
-      model: process.env.AI_MODEL || "gpt-4o-mini"
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash"
     });
 
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY
     });
 
-    const response = await client.responses.create({
-      model: process.env.AI_MODEL || "gpt-4o-mini",
-      input: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: buildPrompt({ dataset, csvAnalysis })
-            }
-          ]
-        }
-      ],
-      text: {
-        format: {
-          type: "json_schema",
-          name: "dataset_metadata_suggestion",
-          strict: true,
-          schema: responseSchema
-        }
+    console.log("Gemini request sent", {
+      datasetId: dataset.id
+    });
+
+    const response = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      contents: buildPrompt({ dataset, csvAnalysis }),
+      config: {
+        responseMimeType: "application/json",
+        responseSchema
       }
     });
 
-    const parsed = JSON.parse(response.output_text);
+    console.log("Gemini response received", {
+      datasetId: dataset.id
+    });
+
+    const parsed = JSON.parse(response.text);
     console.log("AI metadata call succeeded", {
       datasetId: dataset.id
     });
     return normalizeAiResult(parsed);
   } catch (error) {
-    const failure = mapOpenAiFailure(error);
+    const failure = mapGeminiFailure(error);
     console.error("AI metadata suggestion failed", {
       datasetId: dataset.id,
       aiStatus: failure.aiStatus,
