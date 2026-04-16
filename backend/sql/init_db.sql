@@ -97,8 +97,9 @@ CREATE TABLE DATASET (
     owner_org_id                INTEGER REFERENCES ORGANIZATION(org_id) ON DELETE SET NULL,
     visibility_status           VARCHAR(20) DEFAULT 'public'
                                 CHECK (visibility_status IN ('public','private','restricted')),
-    publication_status          VARCHAR(20) DEFAULT 'draft'
-                                CHECK (publication_status IN ('draft','pending_review','approved','rejected','flagged')),
+    publication_status          VARCHAR(20) DEFAULT 'pending_review'
+                                CHECK (publication_status IN ('pending_review','published','rejected','flagged')),
+    review_notes                TEXT,
     license                     VARCHAR(100),
     task_type                   VARCHAR(50),
     modality                    VARCHAR(50),
@@ -340,7 +341,7 @@ SELECT
     d.current_total_downloads
 FROM DATASET d
 LEFT JOIN FEEDBACK f ON d.dataset_id = f.dataset_id
-WHERE d.publication_status = 'approved'
+WHERE d.publication_status = 'published'
   AND d.visibility_status  = 'public'
 GROUP BY d.dataset_id, d.title, d.current_avg_rating, d.current_total_downloads
 HAVING COUNT(f.feedback_id) >= 5
@@ -542,7 +543,7 @@ VALUES (
     'global-climate-indicators-2000-2023',
     'Monthly climate metrics across 195 countries including temperature anomalies, CO2 levels, and sea surface data.',
     (SELECT user_id FROM "USER" WHERE username = 'jane_doe'),
-    'public', 'approved', 'CC BY 4.0', 'regression', 'tabular'
+    'public', 'published', 'CC BY 4.0', 'regression', 'tabular'
 );
 
 INSERT INTO DATASET_VERSION (dataset_id, version_number, changelog, is_current,

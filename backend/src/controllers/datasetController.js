@@ -2,8 +2,10 @@ const fs = require("fs/promises");
 const asyncHandler = require("../utils/asyncHandler");
 const datasetService = require("../services/datasetService");
 
-const listDatasets = asyncHandler(async (_req, res) => {
-  const datasets = await datasetService.listDatasets();
+const listDatasets = asyncHandler(async (req, res) => {
+  const datasets = await datasetService.listDatasets({
+    includeAll: req.user?.role === "admin"
+  });
   res.json(datasets);
 });
 
@@ -105,6 +107,24 @@ const uploadDataset = asyncHandler(async (req, res) => {
   res.status(201).json(result);
 });
 
+const deleteDataset = asyncHandler(async (req, res) => {
+  const datasetId = req.params.datasetId;
+
+  if (!Number.isInteger(Number(datasetId))) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid dataset id"
+    });
+  }
+
+  await datasetService.deleteDatasetById(Number(datasetId));
+
+  res.json({
+    success: true,
+    message: "Dataset deleted"
+  });
+});
+
 const downloadVersion = asyncHandler(async (req, res) => {
   const versionId = req.params.versionId;
 
@@ -153,5 +173,6 @@ module.exports = {
   listFeedback,
   upsertFeedback,
   uploadDataset,
+  deleteDataset,
   downloadVersion
 };

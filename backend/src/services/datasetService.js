@@ -32,16 +32,18 @@ const assertDatasetExists = async (datasetId, client = db) => {
   }
 };
 
-const listDatasets = async () => {
+const listDatasets = async ({ includeAll = false } = {}) => {
   const { rows } = await db.query(
     `
       SELECT
         dataset_id AS id,
         title,
         short_description AS description,
+        publication_status AS "publication_status",
         current_avg_rating AS rating,
         current_credibility_score AS "credibilityScore"
       FROM DATASET
+      ${includeAll ? "" : "WHERE publication_status = 'published'"}
       ORDER BY created_at DESC, dataset_id DESC
     `
   );
@@ -177,9 +179,10 @@ const createDatasetUpload = async ({ userId, title, description, file }) => {
           title,
           slug,
           short_description,
-          owner_user_id
+          owner_user_id,
+          publication_status
         )
-        VALUES ($1, $2, $3, $4)
+        VALUES ($1, $2, $3, $4, 'pending_review')
         RETURNING dataset_id
       `,
       [title, slug, description || null, userId]
@@ -297,12 +300,29 @@ const logDownload = async ({ datasetId, versionId, userId }) => {
   );
 };
 
+const deleteDatasetById = async (datasetId) => {
+  const result = await db.query(
+    `
+      DELETE FROM DATASET
+      WHERE dataset_id = $1
+    `,
+    [datasetId]
+  );
+
+  if (!result.rowCount) {
+    const error = new Error("Dataset not found");
+    error.statusCode = 404;
+    throw error;
+  }
+};
+
 module.exports = {
   listDatasets,
   getDatasetById,
   listFeedbackByDatasetId,
   upsertFeedback,
   createDatasetUpload,
+  deleteDatasetById,
   resolveDatasetFilePath,
   getVersionFileById,
   logDownload
