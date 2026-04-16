@@ -546,6 +546,14 @@ INSERT INTO REGISTERED_INDIVIDUAL (user_id, display_name, bio, reputation_score,
     ((SELECT user_id FROM "USER" WHERE username = 'david_brown'),
      'David Brown', 'Graduate student studying climate change impacts.',                     10.50, 'unverified');
 
+-- Make jane_doe an admin
+INSERT INTO ADMIN (user_id, admin_level, moderation_privileges)
+VALUES (
+    (SELECT user_id FROM "USER" WHERE username = 'jane_doe'),
+    1,
+    'dataset_review,report_management'
+);
+
 INSERT INTO DATASET (title, slug, short_description, owner_user_id,
                      visibility_status, publication_status, license, task_type, modality)
 VALUES (

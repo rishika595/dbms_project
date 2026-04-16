@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.get("/", optionalAuthMiddleware, datasetController.listDatasets);
 router.post("/upload", authMiddleware, upload.single("file"), uploadController.uploadDataset);
-router.delete("/:datasetId", requireAdmin, datasetController.deleteDataset);
+router.delete("/:datasetId", authMiddleware, requireAdmin, datasetController.deleteDataset);
 router.get("/:datasetId", datasetController.getDatasetById);
 router.get("/:datasetId/feedback", datasetController.listFeedback);
 router.post("/:datasetId/feedback", authMiddleware, feedbackController.upsertFeedback);
