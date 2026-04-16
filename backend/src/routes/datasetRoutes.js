@@ -2,6 +2,7 @@ const express = require("express");
 const datasetController = require("../controllers/datasetController");
 const feedbackController = require("../controllers/feedbackController");
 const uploadController = require("../controllers/uploadController");
+const tagController = require("../controllers/tagController");
 const { authMiddleware, optionalAuthMiddleware } = require("../middleware/authMiddleware");
 const { requireAdmin } = require("../middleware/adminMiddleware");
 const upload = require("../middleware/uploadMiddleware");
@@ -12,6 +13,7 @@ router.get("/", optionalAuthMiddleware, datasetController.listDatasets);
 router.post("/upload", authMiddleware, upload.single("file"), uploadController.uploadDataset);
 router.delete("/:datasetId", authMiddleware, requireAdmin, datasetController.deleteDataset);
 router.get("/:datasetId", datasetController.getDatasetById);
+router.post("/:datasetId/tags", authMiddleware, tagController.attachTagsToDataset);
 router.get("/:datasetId/feedback", datasetController.listFeedback);
 router.post("/:datasetId/feedback", authMiddleware, feedbackController.upsertFeedback);
 

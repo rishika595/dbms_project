@@ -2,6 +2,7 @@ const path = require("path");
 const db = require("../config/db");
 const slugify = require("../utils/slugify");
 const { parseCsvPreview } = require("./csvService");
+const tagService = require("./tagService");
 
 const backendRoot = path.join(__dirname, "..", "..");
 const uploadsRoot = path.join(backendRoot, "uploads");
@@ -32,7 +33,29 @@ const assertDatasetExists = async (datasetId, client = db) => {
   }
 };
 
-const listDatasets = async ({ includeAll = false } = {}) => {
+const listDatasets = async ({ includeAll = false, tag } = {}) => {
+  const conditions = [];
+  const params = [];
+
+  if (!includeAll) {
+    conditions.push("publication_status = 'published'");
+  }
+
+  if (typeof tag === "string" && tag.trim()) {
+    params.push(tag.trim());
+    conditions.push(`
+      EXISTS (
+        SELECT 1
+        FROM DATASET_TAG dt
+        JOIN TAG t ON t.id = dt.tag_id
+        WHERE dt.dataset_id = DATASET.dataset_id
+          AND LOWER(t.name) = LOWER($${params.length})
+      )
+    `);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
   const { rows } = await db.query(
     `
       SELECT
@@ -43,12 +66,13 @@ const listDatasets = async ({ includeAll = false } = {}) => {
         current_avg_rating AS rating,
         current_credibility_score AS "credibilityScore"
       FROM DATASET
-      ${includeAll ? "" : "WHERE publication_status = 'published'"}
+      ${whereClause}
       ORDER BY created_at DESC, dataset_id DESC
-    `
+    `,
+    params
   );
 
-  return rows;
+  return tagService.addTagsToDatasets(rows);
 };
 
 const getDatasetById = async (datasetId) => {
@@ -96,6 +120,9 @@ const getDatasetById = async (datasetId) => {
     error.statusCode = 404;
     throw error;
   }
+
+  const tags = await tagService.listDatasetTags(datasetId);
+  dataset.tags = tags;
 
   return dataset;
 };
@@ -163,7 +190,7 @@ const createUniqueSlug = async (title, client) => {
   }
 };
 
-const createDatasetUpload = async ({ userId, title, description, file }) => {
+const createDatasetUpload = async ({ userId, title, description, tags = [], file }) => {
   const client = await db.pool.connect();
 
   try {
@@ -228,6 +255,8 @@ const createDatasetUpload = async ({ userId, title, description, file }) => {
         JSON.stringify({ headers: csvInfo.headers })
       ]
     );
+
+    await tagService.attachTagsToDataset(datasetId, tags, client);
 
     await client.query("COMMIT");
 

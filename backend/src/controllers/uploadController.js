@@ -1,8 +1,10 @@
 const asyncHandler = require("../utils/asyncHandler");
 const datasetService = require("../services/datasetService");
+const tagService = require("../services/tagService");
 
 const uploadDataset = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
+  const tags = tagService.normalizeTagNames(req.body.tags);
 
   if (!title || !req.file) {
     return res.status(400).json({
@@ -22,6 +24,7 @@ const uploadDataset = asyncHandler(async (req, res) => {
     userId: req.user.id,
     title,
     description,
+    tags,
     file: req.file
   });
 

@@ -5,6 +5,7 @@ const datasetRoutes = require("./routes/datasetRoutes");
 const versionRoutes = require("./routes/versionRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const tagRoutes = require("./routes/tagRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -21,6 +22,7 @@ app.use("/datasets", datasetRoutes);
 app.use("/versions", versionRoutes);
 app.use("/ai", aiRoutes);
 app.use("/admin", adminRoutes);
+app.use("/tags", tagRoutes);
 
 app.use(errorMiddleware);
 

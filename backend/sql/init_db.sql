@@ -148,13 +148,13 @@ CREATE TABLE DATASET_METADATA (
 -- ============================================================================
 
 CREATE TABLE TAG (
-    tag_id   SERIAL PRIMARY KEY,
-    tag_name VARCHAR(100) NOT NULL UNIQUE
+    id   SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE
 );
 
 CREATE TABLE DATASET_TAG (
     dataset_id  INTEGER REFERENCES DATASET(dataset_id) ON DELETE CASCADE,
-    tag_id      INTEGER REFERENCES TAG(tag_id) ON DELETE CASCADE,
+    tag_id      INTEGER REFERENCES TAG(id) ON DELETE CASCADE,
     PRIMARY KEY (dataset_id, tag_id)
 );
 

@@ -4,7 +4,8 @@ const datasetService = require("../services/datasetService");
 
 const listDatasets = asyncHandler(async (req, res) => {
   const datasets = await datasetService.listDatasets({
-    includeAll: req.user?.role === "admin"
+    includeAll: req.user?.role === "admin",
+    tag: req.query.tag
   });
   res.json(datasets);
 });

@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const tagService = require("./tagService");
 
 const getPendingDatasets = async ({ page = 1, limit = 10 } = {}) => {
   const offset = (page - 1) * limit;
@@ -21,7 +22,7 @@ const getPendingDatasets = async ({ page = 1, limit = 10 } = {}) => {
     [limit, offset]
   );
 
-  return rows;
+  return tagService.addTagsToDatasets(rows);
 };
 
 const reviewDataset = async (datasetId, { action, notes }) => {
