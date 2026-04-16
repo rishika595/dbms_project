@@ -73,6 +73,9 @@ CREATE TABLE ORGANIZATION (
     reputation_score    DECIMAL(5,2) DEFAULT 0.00 CHECK (reputation_score >= 0),
     logo_url            VARCHAR(500)
 );
+ALTER TABLE ORGANIZATION
+    ADD COLUMN slug        VARCHAR(255) UNIQUE,
+    ADD COLUMN updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 CREATE TABLE ORGANIZATION_MEMBER (
     org_id          INTEGER REFERENCES ORGANIZATION(org_id) ON DELETE CASCADE,
@@ -82,6 +85,8 @@ CREATE TABLE ORGANIZATION_MEMBER (
     joined_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (org_id, user_id)
 );
+ALTER TABLE ORGANIZATION_MEMBER
+    ADD COLUMN added_by INTEGER REFERENCES "USER"(user_id) ON DELETE SET NULL;
 
 
 -- ============================================================================
@@ -233,12 +238,12 @@ CREATE INDEX idx_dataset_tag_dataset      ON DATASET_TAG(dataset_id);
 CREATE INDEX idx_dataset_tag_tag          ON DATASET_TAG(tag_id);
 CREATE INDEX idx_report_dataset           ON REPORT(dataset_id);
 CREATE INDEX idx_report_status            ON REPORT(report_status);
+CREATE INDEX idx_organization_slug        ON ORGANIZATION(slug);
 
 
 -- ============================================================================
 -- SECTION 7: TRIGGERS & FUNCTIONS
 -- ============================================================================
-
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -306,6 +311,11 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER manage_current_version
 BEFORE INSERT OR UPDATE ON DATASET_VERSION
 FOR EACH ROW EXECUTE FUNCTION ensure_single_current_version();
+
+-- Auto-update updated_at on ORGANIZATION changes
+CREATE TRIGGER update_organization_timestamp
+BEFORE UPDATE ON ORGANIZATION
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 
 -- ============================================================================
